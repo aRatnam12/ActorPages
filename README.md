@@ -62,3 +62,7 @@ Project Structure
 ### Quick Start
 
 1. source env/bin/activate
+
+### URL
+
+1. fa16-cs411-18.cs.illinois.edu
