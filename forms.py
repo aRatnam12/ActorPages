@@ -4,6 +4,8 @@ from wtforms.validators import DataRequired, EqualTo, Length
 
 # Set your classes here.
 
+class SearchForm(Form):
+    search_term = TextField('Search', validators=[DataRequired(), Length(min=3, max=50)])
 
 class RegisterForm(Form):
     name = TextField(
@@ -31,3 +33,6 @@ class ForgotForm(Form):
     email = TextField(
         'Email', validators=[DataRequired(), Length(min=6, max=40)]
     )
+
+class FavoriteForm(Form):
+    pass

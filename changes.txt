@@ -1,0 +1,21 @@
+from sqlalchemy import create_engine, scoped_session, sessionmaker
+
+Session = scoped_session( sessionmaker() )
+engine = create_engine('mysql+mysqldb://scott:tiger@localhost/foo')
+
+app.config['SQLALCHEMY_POOL_SIZE'] = 100
+app.config['SQLALCHEMY_POOL_RECYCLE'] = 280
+
+
+## IN EACH FUNCTION
+session = Session()
+result = session.execute( someMappedClass )
+# use session like normal ...
+session.close()
+# RETURN
+
+
+
+http://stackoverflow.com/questions/6471549/avoiding-mysql-server-has-gone-away-on-infrequently-used-python-flask-server
+http://stackoverflow.com/questions/17972020/how-to-execute-raw-sql-in-sqlalchemy-flask-app
+http://docs.sqlalchemy.org/en/latest/orm/session_api.html#sqlalchemy.orm.session.Session

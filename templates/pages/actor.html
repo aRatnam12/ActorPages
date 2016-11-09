@@ -1,0 +1,31 @@
+{% extends 'layouts/main.html' %}
+{% block title %}ActorPages - Actor{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Actor: {{ actor_name[0] }}</h1>
+  <form action="" method="post">
+    {{ add_favorite_form.hidden_tag() }}
+    <p><input class="form_submit" type="submit" value="Add to Favorites"></p>
+  </form>
+</div>
+<p class="lead">
+<ul>
+  <li>Actor ID: {{actor_id}}</li>
+  <li>Actor Score: 6.8 (placeholder for Advanced Feature)</li>
+  <ul>
+    <li>Actor Comedy Score: 2.5</li>
+    <li>Actor Horror Score: 7.0</li>
+    <li>Actor Drama Score: 5.0</li>
+    <li>More Genre Score Breakdowns...</li>
+  </ul>
+  <li>Movies:</li>
+  <ul>
+  {% for (my_title,rating,year),genres in movies.iteritems() %}
+    <li>Title:  {{ my_title }}<br>Rating: {{ rating }}<br>Year: {{ year }}
+    <br>Genre: {% for genre in genres %} {{ genre }}, {% endfor %}</li>
+  {% endfor %}
+  </ul>
+</ul>
+</p>
+{% endblock %}

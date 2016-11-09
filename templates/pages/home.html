@@ -1,0 +1,27 @@
+{% extends 'layouts/main.html' %}
+{% block title %}ActorPages - Favorite Actors{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Your Favorite Actors</h1>
+</div>
+<p class="lead">
+<ol>
+{% for actor_name,actorid in res %}
+<li><a href={{ url_for('actor', actor_id=actorid) }}>{{ actor_name }}</a></li>
+{% endfor %}
+</ol>
+</p>
+<div class="page-header">
+  <h1>Your Recommended Actors</h1>
+  <h3> (placeholder for Advanced Feature)</h3>
+</div>
+<p class="lead">
+<ol>
+{% for actor_name,actorid in res %}
+<li><a href={{ url_for('actor', actor_id=actorid) }}>{{ actor_name }}</a></li>
+{% endfor %}
+</ol>
+</p>
+
+{% endblock %}

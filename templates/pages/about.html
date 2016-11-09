@@ -1,0 +1,22 @@
+{% extends 'layouts/main.html' %}
+{% block title %}ActorPages - About{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>About ActorPages</h1>
+</div>
+<p class="lead">Creators: Ansh Ratnam, Veronica Peterson, Paul Rachwalski
+
+<h3>Basic Functionality</h3>
+<p>Our project is ActorPages, which displays a variety of information to users about their favorite actors. The user is able to search through the entire IMDb database of actors and view several metrics about the actor and the types of movies and television shows that they’ve been in.</p>
+<p>The insert and delete functionality come from the user being able to store a list of their top ten favorite actors. The list is ordered from first-to tenth-favorite actor, and can be reordered if the user’s preferences changed, thus giving the functionality to update their list.</p>
+
+<h3>Advanced Functionality</h3>
+<p>The first advanced function that we will employ in ActorPages is a recommended actor list. As part of our basic functionality, users will be able to maintain a ranked top 10 list of favorite actors. Users will then be able to see a list of recommended actors based on their top 10 list. To achieve this, we will query the database for each actor in the top 10 list and find the actor that has acted in the most movies with that actor.</p>
+<p>The second advanced function that we will employ in ActorPages is a breakdown of actor scores based on genre. When a user clicks on an actor, they will be taken to that actor’s page. On this page, the user will be able to view the actors score, the movies they have acted in, and the breakdown of film scores based on genre. This will be achieved by querying the movie database for all movies the actor has acted in, organizing them by genre, and finding the average movie score for each of the genres. We will then render an ordered list of genres and corresponding scores for the actor.</p>
+
+<h3>Benefits for Users</h3>
+<p>The main benefit to users stems from the fact that there isn’t any sort of website that is dedicated to actors. Most film websites allow similar functionality, but focused on movies rather than the actors. Consequently, ActorPages gives users the ability to think about films from an actor perspective. Our app will make it very simple for users to think of a movie to watch based on actors that they like. Additionally, it will give them the ability to find similar actors, exposing an entire list of movies that they may not have watched. As a result, ActorPages can really foster film discovery in a different way than movie websites have before.</p>
+
+{% endblock %}
+
