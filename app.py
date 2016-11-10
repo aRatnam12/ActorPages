@@ -93,13 +93,13 @@ def actor(actor_id):
     movie_query = 'SELECT m.MovieID, m.title, m.rating, m.year FROM Movies m, ActsIn a WHERE m.MovieID=a.MovieID AND a.ActorID=' + actor_id + ';'
     cur = db.cursor()
     cur.execute(movie_query)
-    movies = [ (movieID, urllib.quote(str(title)), urllib.quote(str(rating)), urllib.quote(str(year))) for (movieID, title, rating, year) in cur.fetchall() ]
+    movies = [ (movieID, unicode(str(title), 'latin-1'), urllib.quote(str(rating)), urllib.quote(str(year))) for (movieID, title, rating, year) in cur.fetchall() ]
     movie_genres = {}
     for movieID,title,rating,year in movies:
         genre_query = 'SELECT g.genreName FROM Genre g, HasGenre hg WHERE g.genreID=hg.genreID AND hg.MovieID=' + str(movieID) +';'
         cur = db.cursor()
         cur.execute(genre_query)
-        movie_genres[(title,rating,year)] = [urllib.quote(str(genre)) for genre in cur.fetchall()]
+        movie_genres[(title,rating,year)] = [str(genre).strip('(').strip('),').strip('\'') for genre in cur.fetchall()]
     if form.validate_on_submit():
         user_id=1
         favorite_query = 'DELETE FROM Favorites WHERE userID=' + str(user_id) + ' AND (rank=10 OR actorID=' + str(actor_id) + ');'

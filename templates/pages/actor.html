@@ -2,30 +2,54 @@
 {% block title %}ActorPages - Actor{% endblock %}
 {% block content %}
 
-<div class="page-header">
-  <h1>Actor: {{ actor_name[0] }}</h1>
+<div class="page-header" style="text-align:center;">
+  <h1>{{ actor_name[0] }}</h1>
+  <h6>Actor ID: {{actor_id}}</h6>
   <form action="" method="post">
     {{ add_favorite_form.hidden_tag() }}
     <p><input class="form_submit" type="submit" value="Add to Favorites"></p>
   </form>
 </div>
 <p class="lead">
-<ul>
-  <li>Actor ID: {{actor_id}}</li>
-  <li>Actor Score: 6.8 (placeholder for Advanced Feature)</li>
-  <ul>
-    <li>Actor Comedy Score: 2.5</li>
-    <li>Actor Horror Score: 7.0</li>
-    <li>Actor Drama Score: 5.0</li>
-    <li>More Genre Score Breakdowns...</li>
-  </ul>
-  <li>Movies:</li>
-  <ul>
-  {% for (my_title,rating,year),genres in movies.iteritems() %}
-    <li>Title:  {{ my_title }}<br>Rating: {{ rating }}<br>Year: {{ year }}
-    <br>Genre: {% for genre in genres %} {{ genre }}, {% endfor %}</li>
-  {% endfor %}
-  </ul>
-</ul>
+<div class="col-sm-3"> 
+  <table>
+    <caption>Actor Score: 6.8 (Placeholder for Advanced Feature)</caption>
+    <tr>
+      <th>Genre</th>
+      <th>Score</th>
+    </tr>
+    <tr>
+      <td>Comedy</td>
+      <td>2.5</td>
+    <tr>
+    <tr>
+      <td>Horror</td>
+      <td>7.0</td>
+    </tr>
+    <tr>
+      <td>Drama</td>
+      <td>5.0</td>
+    </tr>
+  </table>
+</div>
+<div class="col-sm-9">
+  <table>
+    <caption>Movies</caption>
+    <tr>
+      <th>Movie Title</th>
+      <th>Year</th>
+      <th>Rating</th>
+      <th>Genres</th>
+    </tr>
+    {% for (my_title,rating,year),genres in movies.iteritems() %}
+      <tr>
+        <td>{{ my_title }}</td>
+        <td>{{ year }}</td>
+        <td>{{ rating }}</td>
+        <td>{% for genre in genres %} {{genre}}, {% endfor %}</td>
+      </tr>
+    {% endfor %}
+  </table>  
+</div>
 </p>
 {% endblock %}
