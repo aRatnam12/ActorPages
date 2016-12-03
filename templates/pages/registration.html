@@ -1,0 +1,14 @@
+{% extends 'layouts/main_login.html' %}
+{% block title %}ActorPages-Register{% endblock %}
+{% block content %}
+
+<div class="page-header" style="text-align:center;">
+  <h1>Register</h1>
+  <form action="" method="post">
+    {{ form.hidden_tag() }}
+    <p>Username: {{ form.name(size=25)}}
+    <input class="form_submit" type="submit" value="Register"></p>
+  </form>
+  <a href='/login'>Return to Login</a>
+</div>
+{% endblock %}
