@@ -48,16 +48,16 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="/">ActorPages</a>
+          <a class="navbar-brand" href="{{ url_for('home', user_id=userid) }}">ActorPages</a>
         </div>
         <div class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
-            <li {% if request.endpoint == 'home' %} class="active" {% endif %}><a href="{{ url_for('home') }}">Home</a></li>
-            <li {% if request.endpoint == 'actors' %} class="active" {% endif %}><a href="{{ url_for('actors') }}">Actors</a></li>
-            <li {% if request.endpoint == 'about' %} class="active" {% endif %}><a href="{{ url_for('about') }}">About</a></li>
+            <li {% if request.endpoint == 'home' %} class="active" {% endif %}><a href="{{ url_for('home', user_id=userid) }}">Home</a></li>
+            <li {% if request.endpoint == 'actors' %} class="active" {% endif %}><a href="{{ url_for('actors', user_id=userid) }}">Actors</a></li>
+            <li {% if request.endpoint == 'about' %} class="active" {% endif %}><a href="{{ url_for('about', user_id=userid) }}">About</a></li>
          </ul>
           <ul class="nav navbar-nav pull-right">
-            <li><a href="{{ url_for('login') }}">Change User</a></li>
+            <li><a href="{{ url_for('login') }}">Logout</a></li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>

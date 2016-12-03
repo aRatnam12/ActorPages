@@ -10,7 +10,7 @@
     <p class="lead">
     <ol>
     {% for actor_name,actorid in res %}
-    <li><a href={{ url_for('actor', actor_id=actorid) }}>{{ actor_name }}</a></li>
+    <li><a href={{ url_for('actor', user_id=userid, actor_id=actorid) }}>{{ actor_name }}</a></li>
     {% endfor %}
     </ol>
     </p>
@@ -18,12 +18,11 @@
   <div class="col-sm-6">
     <div class="page-header">
       <h1>Your Recommended Actors</h1>
-      <h3> (placeholder for Advanced Feature)</h3>
     </div>
     <p class="lead">
     <ol>
-    {% for actor_name,actorid in res %}
-    <li><a href={{ url_for('actor', actor_id=actorid) }}>{{ actor_name }}</a></li>
+    {% for actor_name,actorid in rec %}
+    <li><a href={{ url_for('actor', user_id=userid, actor_id=actorid) }}>{{ actor_name }}</a></li>
     {% endfor %}
     </ol>
     </p>

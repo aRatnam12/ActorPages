@@ -2,7 +2,7 @@
 # Imports
 #----------------------------------------------------------------------------#
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 # from flask.ext.sqlalchemy import SQLAlchemy
 import logging
 from logging import Formatter, FileHandler
@@ -12,6 +12,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 import os
 import MySQLdb
 import urllib
+from collections import OrderedDict
 
 #----------------------------------------------------------------------------#
 # App Config.
@@ -33,7 +34,7 @@ db = MySQLdb.connect(host='localhost', user='root', passwd='cs411fa2016', db='ac
 '''
 @app.teardown_request
 def shutdown_session(exception=None):
-    db.close() 
+    db.close()
 '''
 
 # Login required decorator.
@@ -52,14 +53,71 @@ def login_required(test):
 # Controllers.
 #----------------------------------------------------------------------------#
 
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user_name = form.name.data
+        cur = db.cursor()
+        cur.execute('SELECT userID,name FROM User WHERE name LIKE \'' + str(user_name) + '\';')
+        user_id,u_name = cur.fetchone()
+        if user_id:
+            return redirect('/home/' + str(user_id))
+        else:
+            flash('No user exists with that name.')
+    return render_template('pages/login.html', form=form)
 
-@app.route('/')
-def home():
+@app.route('/register', methods=('GET', 'POST'))
+def register():
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user_name = form.name.data
+        cur = db.cursor()
+        cur.execute('SELECT userID,name FROM User WHERE name LIKE \'' + str(user_name) + '\';')
+        if cur.fetchone():
+            flash('User with that name already exists.')
+        else:
+            cur = db.cursor()
+            cur.execute('INSERT INTO User(name) VALUES (\'' + str(user_name) + '\');')
+            db.commit()
+            cur = db.cursor()
+            cur.execute('SELECT userID,name FROM User WHERE name LIKE \'' + str(user_name) + '\';')
+            user_id,u_name = cur.fetchone()
+            return redirect('/home/' + str(user_id))
+    return render_template('pages/registration.html', form=form)
+
+@app.route('/logout')
+def logout():
+    return redirect('pages/login')
+
+@app.route('/home/<user_id>', methods=['GET', 'POST'])
+def home(user_id):
     cur = db.cursor()
-    cur.execute('SELECT Actor.name,Actor.actorID FROM Actor, Favorites WHERE Favorites.userID = 1 AND Actor.actorID = Favorites.actorID ORDER BY Favorites.rank;')
-    results = [ (name,urllib.quote(str(actor_id))) for (name,actor_id) in cur.fetchall() ]
-    return render_template('pages/home.html', res=results)
+    cur.execute('SELECT Actor.name,Actor.actorID FROM Actor, Favorites WHERE Favorites.userID = ' + user_id + ' AND Actor.actorID = Favorites.actorID AND Favorites.rank < 11 ORDER BY Favorites.rank;')
+    favorites = [ (name,urllib.quote(str(actor_id))) for (name,actor_id) in cur.fetchall() ]
+    i = 0
+    recommended = []
+    while i<4 and i<len(favorites):
+        fav = favorites[i][1]
+        if fav:
+            amount = 11
+            query = 'SELECT A2.name, A2.actorID FROM Actor A2, ActsIn AI2, Movies M2 WHERE AI2.movieID = M2.MovieId AND AI2.actorID = A2.actorID AND A2.actorID NOT IN (SELECT Favorites.actorID FROM Favorites WHERE 1) and M2.MovieId IN (SELECT AI1.movieId from ActsIn AI1 where AI1.actorID=' + str(fav) + ') GROUP BY A2.actorID ORDER BY count(*) DESC LIMIT ' + str(amount) + ';' 
+            #query = 'SELECT A3.name, A3.actorID FROM Actor A3 WHERE A3.actorID IN (SELECT A2.actorID FROM Actor A2, ActsIn AI2, Movies M2 WHERE AI2.movieID = M2.MovieId AND AI2.actorID = A2.actorID AND A2.actorID NOT IN (SELECT Favorites.actorID FROM Favorites WHERE 1) and M2.MovieId IN (SELECT AI1.movieId from ActsIn AI1 where AI1.actorID=' + str(fav) + ') GROUP BY A2.actorID) GROUP BY A3.actorID, A3.name ORDER BY count(*) DESC LIMIT ' + str(amount) + ';'
+            cur = db.cursor()
+            cur.execute(query)
+            
+            new_recs = [ (name,urllib.quote(str(actor_id))) for (name,actor_id) in cur.fetchall() ]
+            count = 4 - i
+            while count > 0:
+                if new_recs[0] not in recommended:
+                    recommended.append(new_recs[0])
+                    count -= 1
+                new_recs = new_recs[1:]
+        i += 1
+    return render_template('pages/home.html', res=favorites, rec=recommended, userid=user_id)
 
+'''
 @app.route('/actors', methods=['GET', 'POST'])
 def actors():
     form = SearchForm()
@@ -69,7 +127,7 @@ def actors():
         search_terms = []
         for term in comma_split:
 		search_terms = search_terms + [x.strip() for x in term.split(' ')]
- 
+
         # Build query from each part of name
         query = 'SELECT actorID, name FROM Actor WHERE name LIKE \'%' + search_terms[0] + '%\''
         for i in range(1,len(search_terms)):
@@ -95,46 +153,109 @@ def actor(actor_id):
     cur.execute(movie_query)
     movies = [ (movieID, unicode(str(title), 'latin-1'), urllib.quote(str(rating)), urllib.quote(str(year))) for (movieID, title, rating, year) in cur.fetchall() ]
     movie_genres = {}
+
+    for movieID,title,rating,year in movies:
+        i = 0
+        recommended = []
+        while i<3 and i<len(favorites):
+            fav = favorites[i][1]
+            if fav:
+                query = 'SELECT A3.name, A3.actorID FROM Actor A3 WHERE A3.actorID IN (SELECT A2.actorID FROM Actor A2, ActsIn AI2, Movies M2 WHERE AI2.movieID = M2.MovieId AND AI2.actorID = A2.actorID AND A2.actorID NOT IN (SELECT Favorites.actorID FROM Favorites WHERE 1) and M2.MovieId IN (SELECT AI1.movieId from ActsIn AI1 where AI1.actorID=' + str(fav) + ') GROUP BY A2.actorID)  GROUP BY A3.name ORDER BY count(*) DESC LIMIT 3;'
+                cur = db.cursor()
+                cur.execute(query)
+                recommended = recommended + [ (name,urllib.quote(str(actor_id))) for (name,actor_id) in cur.fetchall() ]
+            i += 1
+    return render_template('pages/home.html', res=favorites, rec=recommended, userid=user_id)
+'''
+
+@app.route('/actors/<user_id>', methods=['GET', 'POST'])
+def actors(user_id):
+    form = SearchForm()
+    if form.validate_on_submit():
+        # Split name at commas and spaces
+        comma_split = form.search_term.data.split(',')
+        search_terms = []
+        for term in comma_split:
+		search_terms = search_terms + [x.strip() for x in term.split(' ')]
+
+        # Build query from each part of name
+        query = 'SELECT actorID, name FROM Actor WHERE name LIKE \'%' + search_terms[0] + '%\''
+        for i in range(1,len(search_terms)):
+            query += 'AND name LIKE \'%' + search_terms[i] + '%\''
+        query += ';'
+
+        cur = db.cursor()
+        cur.execute(query)
+        actor_list = [ (urllib.quote(str(actor_id)), name) for (actor_id, name) in cur.fetchall()[0:20] ]
+
+        return render_template('pages/actors.html', form=form, actor_list=actor_list, userid=user_id)
+    return render_template('pages/actors.html', form=form, actor_list=[], userid=user_id)
+
+@app.route('/actor/<user_id>/<actor_id>', methods=['GET', 'POST'])
+def actor(user_id, actor_id):
+    form = FavoriteForm()
+    query = 'SELECT name,score FROM Actor WHERE actorID=' + str(actor_id) + ';'
+    cur = db.cursor()
+    cur.execute(query)
+    actor_name,actor_score = cur.fetchone()
+    if not actor_score:
+        score_query = 'UPDATE Actor set score=(SELECT avg(rating) FROM Movies, ActsIn WHERE Movies.MovieID=ActsIn.MovieID AND ActsIn.ActorID=' + str(actor_id) + ') WHERE actorID=' + str(actor_id) + ';'
+        cur = db.cursor()
+        cur.execute(score_query)
+        db.commit()
+        get_score_query = 'SELECT score FROM Actor WHERE actorID=' + str(actor_id) + ';'
+        cur = db.cursor()
+        cur.execute(get_score_query)
+        actor_score = cur.fetchone()
+    if actor_score[0]:
+        actor_score = "%.2f" % float(actor_score[0])
+    else:
+        actor_score = '0.0'
+    movie_query = 'SELECT m.MovieID, m.title, m.rating, m.year FROM Movies m, ActsIn a WHERE m.MovieID=a.MovieID AND a.ActorID=' + str(actor_id) + ';'
+    cur = db.cursor()
+    cur.execute(movie_query)
+    movies = [ (movieID, unicode(str(title), 'latin-1'), urllib.quote(str(rating)), urllib.quote(str(year))) for (movieID, title, rating, year) in cur.fetchall() ]
+    movie_genres = {}
+    genre_scores = {}
     for movieID,title,rating,year in movies:
         genre_query = 'SELECT g.genreName FROM Genre g, HasGenre hg WHERE g.genreID=hg.genreID AND hg.MovieID=' + str(movieID) +';'
         cur = db.cursor()
         cur.execute(genre_query)
-        movie_genres[(title,rating,year)] = [str(genre).strip('(').strip('),').strip('\'') for genre in cur.fetchall()]
+        genres = [str(genre).strip('(').strip('),').strip('\'') for genre in cur.fetchall()]
+        movie_genres[(title,rating,year)] = genres
+        for genre in genres:
+            if genre in genre_scores:
+                cumulative,num = genre_scores[genre]
+                genre_scores[genre] = (cumulative + float(rating), num+1)
+            else:
+                genre_scores[genre] = (float(rating), 1)
+    for key,(val1,val2) in genre_scores.iteritems():
+        rounded_score = float("%.2f" % (val1/val2))
+        genre_scores[key] = (rounded_score, val2)
+    genre_scores = OrderedDict(sorted(genre_scores.items(), key=lambda kv: kv[1][0], reverse=True))
     if form.validate_on_submit():
-        user_id=1
+        rank = form.rank.data
+        if rank < 1:
+            rank = 1
+        if rank > 10:
+            rank = 10
         favorite_query = 'DELETE FROM Favorites WHERE userID=' + str(user_id) + ' AND (rank=10 OR actorID=' + str(actor_id) + ');'
         cur = db.cursor()
         cur.execute(favorite_query)
-        update_query = 'UPDATE Favorites SET rank=rank+1 WHERE 1;'
+        update_query = 'UPDATE Favorites SET rank=rank+1 WHERE userID=' + str(user_id) + ' AND rank>=' + str(rank) + ';'
         cur = db.cursor()
         cur.execute(update_query)
-        add_favorite_query = 'INSERT INTO Favorites VALUES(' + str(user_id) + ',' + actor_id + ',1);'
+        add_favorite_query = 'INSERT INTO Favorites VALUES(' + str(user_id) + ',' + actor_id + ',' + str(rank) + ');'
         cur = db.cursor()
-        cur.execute(add_favorite_query) 
-        return render_template('pages/actor.html', add_favorite_form=form, actor_id=actor_id, actor_name=actor_name, movies=movie_genres)
-    return render_template('pages/actor.html', add_favorite_form=form, actor_id=actor_id, actor_name=actor_name, movies=movie_genres)
+        cur.execute(add_favorite_query)
+        db.commit()
+        return redirect(url_for('actor',user_id=user_id,actor_id=actor_id))
+    return render_template('pages/actor.html', add_favorite_form=form, actor_id=actor_id, actor_name=actor_name, actor_score=actor_score, movies=movie_genres, scores=genre_scores, userid=user_id)
 
-@app.route('/about')
-def about():
-    return render_template('pages/about.html')
+@app.route('/about/<user_id>', methods=['GET'])
+def about(user_id):
+    return render_template('pages/about.html', userid=user_id)
 
-
-@app.route('/login')
-def login():
-    form = LoginForm(request.form)
-    return render_template('forms/login.html', form=form)
-
-
-@app.route('/register')
-def register():
-    form = RegisterForm(request.form)
-    return render_template('forms/register.html', form=form)
-
-
-@app.route('/forgot')
-def forgot():
-    form = ForgotForm(request.form)
-    return render_template('forms/forgot.html', form=form)
 
 # Error handlers.
 
@@ -173,4 +294,3 @@ if __name__ == '__main__':
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-
