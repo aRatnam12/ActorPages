@@ -12,11 +12,15 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 import os
 import MySQLdb
 import urllib
+import urllib2
+import json
 from collections import OrderedDict
 
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
+
+tmdb_api_key = "1eaa83e12e6aba3348d97b7f51753059"
 
 app = Flask(__name__)
 app.config.from_object('config')
@@ -194,10 +198,10 @@ def actors(user_id):
 @app.route('/actor/<user_id>/<actor_id>', methods=['GET', 'POST'])
 def actor(user_id, actor_id):
     form = FavoriteForm()
-    query = 'SELECT name,score FROM Actor WHERE actorID=' + str(actor_id) + ';'
+    query = 'SELECT name,score,picture FROM Actor WHERE actorID=' + str(actor_id) + ';'
     cur = db.cursor()
     cur.execute(query)
-    actor_name,actor_score = cur.fetchone()
+    actor_name,actor_score,actor_picture = cur.fetchone()
     if not actor_score:
         score_query = 'UPDATE Actor set score=(SELECT avg(rating) FROM Movies, ActsIn WHERE Movies.MovieID=ActsIn.MovieID AND ActsIn.ActorID=' + str(actor_id) + ') WHERE actorID=' + str(actor_id) + ';'
         cur = db.cursor()
@@ -211,6 +215,26 @@ def actor(user_id, actor_id):
         actor_score = "%.2f" % float(actor_score[0])
     else:
         actor_score = '0.0'
+
+    if not actor_picture:
+        img_url = ""
+        config_request = "https://api.themoviedb.org/3/configuration?api_key=" + tmdb_api_key
+        req = urllib2.urlopen(config_request)
+        if req.getcode() == 200:
+            data = json.loads(req.read())
+            img_url += data['images']['base_url'] + data['images']['profile_sizes'][1]
+
+            find_request = "https://api.themoviedb.org/3/search/person?api_key=" + tmdb_api_key + "&language=en-US&query=" + urllib.quote(actor_name) + "&page=1&include_adult=false"
+            req = urllib2.urlopen(find_request)
+            if req.getcode() == 200:
+                data = json.loads(req.read())
+                img_url += data['results'][0]['profile_path']
+
+                picture_query = "UPDATE Actor SET picture='" + img_url + "' WHERE actorID=" + actor_id
+                cur = db.cursor()
+                cur.execute(picture_query)
+                actor_picture = img_url
+
     movie_query = 'SELECT m.MovieID, m.title, m.rating, m.year FROM Movies m, ActsIn a WHERE m.MovieID=a.MovieID AND a.ActorID=' + str(actor_id) + ';'
     cur = db.cursor()
     cur.execute(movie_query)
@@ -250,7 +274,7 @@ def actor(user_id, actor_id):
         cur.execute(add_favorite_query)
         db.commit()
         return redirect(url_for('actor',user_id=user_id,actor_id=actor_id))
-    return render_template('pages/actor.html', add_favorite_form=form, actor_id=actor_id, actor_name=actor_name, actor_score=actor_score, movies=movie_genres, scores=genre_scores, userid=user_id)
+    return render_template('pages/actor.html', add_favorite_form=form, actor_id=actor_id, actor_name=actor_name, actor_score=actor_score, actor_picture=actor_picture, movies=movie_genres, scores=genre_scores, userid=user_id)
 
 @app.route('/about/<user_id>', methods=['GET'])
 def about(user_id):
