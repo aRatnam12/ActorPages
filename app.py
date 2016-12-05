@@ -2,7 +2,7 @@
 # Imports
 #----------------------------------------------------------------------------#
 
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 # from flask.ext.sqlalchemy import SQLAlchemy
 import logging
 from logging import Formatter, FileHandler
@@ -65,7 +65,7 @@ def login():
         user_name = form.name.data
         cur = db.cursor()
         cur.execute('SELECT userID,name FROM User WHERE name LIKE \'' + str(user_name) + '\';')
-        user_id,u_name = cur.fetchone()
+	user_id,u_name = cur.fetchone()
         if user_id:
             return redirect('/home/' + str(user_id))
         else:
@@ -211,10 +211,12 @@ def actor(user_id, actor_id):
         cur = db.cursor()
         cur.execute(get_score_query)
         actor_score = cur.fetchone()
-    if actor_score[0]:
-        actor_score = "%.2f" % float(actor_score[0])
+        if actor_score[0]:
+            actor_score = "%.2f" % float(actor_score[0])
+        else:
+            actor_score = '0.0'
     else:
-        actor_score = '0.0'
+	actor_score = "%.2f" % float(actor_score)
 
     if not actor_picture:
         img_url = ""
@@ -257,11 +259,12 @@ def actor(user_id, actor_id):
         rounded_score = float("%.2f" % (val1/val2))
         genre_scores[key] = (rounded_score, val2)
     genre_scores = OrderedDict(sorted(genre_scores.items(), key=lambda kv: kv[1][0], reverse=True))
+    movie_genres = OrderedDict(sorted(movie_genres.items(), key=lambda kv: kv[0][2], reverse=True))
     if form.validate_on_submit():
         rank = form.rank.data
         if rank < 1:
             rank = 1
-        if rank > 10:
+        if rank > 10 or not rank:
             rank = 10
         favorite_query = 'DELETE FROM Favorites WHERE userID=' + str(user_id) + ' AND (rank=10 OR actorID=' + str(actor_id) + ');'
         cur = db.cursor()

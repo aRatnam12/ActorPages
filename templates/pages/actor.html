@@ -44,7 +44,11 @@
         <td>{{ my_title }}</td>
         <td>{{ year }}</td>
         <td>{{ rating }}</td>
-        <td>{% for genre in genres %} {{genre}}, {% endfor %}</td>
+        <td>
+	  {% for genre in genres %}
+	    {{genre}}{% if not loop.last %},{% endif %}
+	  {% endfor %}
+	</td>
       </tr>
     {% endfor %}
   </table>  
